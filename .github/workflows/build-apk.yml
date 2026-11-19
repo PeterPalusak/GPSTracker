@@ -38,6 +38,17 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - name: Install the SDK packages this project needs
+        # The runner image ships some platforms but not necessarily the one
+        # in android/variables.gradle. Installing explicitly turns a
+        # confusing Gradle failure into a step that either works or says
+        # exactly what is missing.
+        run: |
+          sdkmanager --install \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "platform-tools"
+
       - run: npm ci
 
       # Build only what passes; a broken recorder should not reach a phone.
