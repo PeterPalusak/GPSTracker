@@ -7,13 +7,34 @@ web build cannot do this and never will.
 
 ---
 
-## Prerequisites
+## Building in GitHub Actions (no JDK needed locally)
+
+The runner already has a JDK and the Android SDK, so nothing has to be
+installed on the development machine. This is the recommended route.
+
+1. GitHub → **Actions** → **Build Android APK** → **Run workflow**
+2. Leave *Publish the APK as a GitHub release* ticked
+3. When it finishes, open **Releases** and tap the `.apk` **on the phone**
+
+The first install asks permission to install from your browser — allow it for
+Chrome, then tap the file again.
+
+Releases give a direct download link. Workflow *artifacts* are zipped and
+require a GitHub login, which is awkward on a phone; use a release unless you
+only wanted the build to be checked.
+
+Debug builds are signed with the standard debug keystore, so they install
+without any signing setup. That is fine for personal side-loading. For wider
+distribution, sign a release build with your own keystore — and do not commit
+it.
+
+## Building locally (needs a JDK)
+
+Only if you have, or can install, the toolchain:
 
 - **JDK 21** (Android Gradle Plugin 8.x)
 - **Android Studio** with the Android SDK, platform 36 and build-tools
 - A phone with **USB debugging** enabled
-
-## Building
 
 ```bash
 npm run cap:sync     # build the web app and copy it into android/
@@ -31,13 +52,14 @@ cd android
 Re-run `npm run cap:sync` after every web change — the APK serves a copy of
 `dist/`, not the live source.
 
-## Distributing
+### Without admin rights
 
-A debug APK can be hosted on a web page and side-loaded. Android will ask the
-user to allow installs from that source; Motorola and Samsung both permit it.
-
-For anything beyond personal use, sign a release build with your own keystore.
-Do not commit the keystore.
+A JDK does not strictly need an installer: the Temurin **.zip** build unpacks
+anywhere and works with `JAVA_HOME` pointed at it. The Android SDK likewise
+comes as a `commandlinetools` zip, from which `sdkmanager` can fetch
+`platforms;android-36` and `build-tools` into a user folder. Whether that is
+permitted on a managed machine is a question for whoever manages it — the CI
+route above avoids it entirely.
 
 ---
 

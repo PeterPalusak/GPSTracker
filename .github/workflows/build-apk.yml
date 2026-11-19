@@ -1,0 +1,91 @@
+name: Build Android APK
+
+# Run from the Actions tab: Build Android APK -> Run workflow.
+#
+# Exists so the APK can be built without a JDK or Android Studio on the
+# development machine — the runner already has both.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: >-
+          Publish the APK as a GitHub release, giving a direct download link
+          that works on a phone. Artifacts are zipped and need a login, so
+          leave this on unless you only want a CI check.
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # Android Gradle Plugin 8.x requires 17 or newer.
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      # Build only what passes; a broken recorder should not reach a phone.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Build web assets and sync into the Android project
+        run: npx cap sync android
+
+      - name: Assemble debug APK
+        working-directory: android
+        # Debug builds are signed with the standard debug keystore, so the
+        # APK installs without any signing setup. Good enough for personal
+        # side-loading; a release build would need your own keystore.
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name the APK after the run
+        id: apk
+        run: |
+          VERSION="build-${{ github.run_number }}"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "gps-logger-$VERSION.apk"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "file=gps-logger-$VERSION.apk" >> "$GITHUB_OUTPUT"
+          ls -lh "gps-logger-$VERSION.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.file }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 30
+
+      - name: Publish release
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Pre-release so it is clearly a debug build, and so it does not
+        # displace any future signed release as "latest".
+        run: |
+          gh release create "${{ steps.apk.outputs.version }}" \
+            "${{ steps.apk.outputs.file }}" \
+            --title "Debug APK ${{ steps.apk.outputs.version }}" \
+            --prerelease \
+            --notes "Debug build of \`${{ github.sha }}\`.
+
+          Open this page on the phone and tap the \`.apk\` to install.
+          Android will ask you to allow installs from your browser the first time.
+
+          Records with the screen off via a foreground service. After installing,
+          grant location **Allow all the time** in system settings — Android will
+          not offer that in the first prompt. On a Samsung, also take the app out
+          of *Sleeping apps*; see ANDROID.md."
