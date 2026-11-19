@@ -12,8 +12,8 @@ import type { Recorder } from '../app/recorder';
 import { useSettings } from '../app/useSettings';
 import type { LogMeta } from '../core/types';
 import type { LogRepository } from '../data/logRepository';
+import { isNativePlatform, onAppResume, openAppSettings } from '../platform';
 import {
-  openAppSettings,
   queryLocationPermission,
   requestLocationPermission,
   watchLocationPermission,
@@ -76,6 +76,20 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
     return () => dispose();
   }, []);
 
+  // REQ-BG-12: a recording can continue while the interface is away, so
+  // returning to the app must bring the panel up to date rather than show
+  // whatever it last rendered.
+  useEffect(() => {
+    let dispose = () => {};
+    void onAppResume(() => {
+      void refreshLogs();
+      void queryLocationPermission().then(setPermission);
+    }).then((fn) => {
+      dispose = fn;
+    });
+    return () => dispose();
+  }, [refreshLogs]);
+
   const handleRequestPermission = useCallback(async () => {
     setPermission(await requestLocationPermission());
   }, []);
@@ -122,7 +136,7 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
           recorder={recorder}
           units={units}
           permission={permission}
-          canOpenSettings={false}
+          canOpenSettings={isNativePlatform()}
           lastLog={lastLog}
           onRequestPermission={() => void handleRequestPermission()}
           onOpenSettings={() => void handleOpenSettings()}

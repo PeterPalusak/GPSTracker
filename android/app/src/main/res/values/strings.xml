@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GPS Logger</string>
+    <string name="title_activity_main">GPS Logger</string>
+    <string name="package_name">com.palusak.gpslogger</string>
+    <string name="custom_url_scheme">com.palusak.gpslogger</string>
+
+    <!--
+        Shown when the user presses and holds the recording notification
+        (REQ-BG-9). Read by @capacitor-community/background-geolocation.
+    -->
+    <string name="capacitor_background_geolocation_notification_channel_name">
+        Ride recording
+    </string>
+
+    <!--
+        Notification accent. Matches the app's own accent colour.
+    -->
+    <string name="capacitor_background_geolocation_notification_color">
+        #2F81F7
+    </string>
+</resources>

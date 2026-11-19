@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        Recording positions (REQ-GPS-1).
+        COARSE is declared alongside FINE because Android 12+ lets the user
+        grant only approximate location; the app must still start rather
+        than crash, and then say the track will be useless.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!--
+        Recording with the screen off (REQ-BG-7, REQ-BG-13).
+        This one cannot be granted from the normal runtime prompt: the user
+        has to choose "Allow all the time" in system settings.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!--
+        The foreground service that keeps recording alive under Doze
+        (REQ-BG-8). FOREGROUND_SERVICE_LOCATION is only enforced from
+        Android 14 and is simply ignored on Android 13, so one manifest
+        serves both the Edge 60 Pro and the Galaxy S20 FE.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!--
+        The persistent notification (REQ-BG-9). A runtime permission from
+        Android 13 onward: without it the notification is suppressed, and
+        some OEM builds then treat the service as unjustified and kill it.
+        This is the most common cause of "it works on my other phone".
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+        Long rides on a phone with aggressive power management (REQ-BG-14).
+        Only used to send the user to the exemption screen; never to grant
+        it silently.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Keeps the recording service running across a reboot-free session. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!--
+        GPS hardware is required for this app to do anything useful, but
+        declared non-required so it still installs on a device without it
+        rather than being filtered out of the store listing.
+    -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+</manifest>

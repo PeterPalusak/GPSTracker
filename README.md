@@ -7,6 +7,7 @@ installable web app, and later as an Android APK wrapping the same code.
 - [Requirements_Analysis.md](Requirements_Analysis.md) — the decisions behind it
 - [Implementation_Plan.md](Implementation_Plan.md) — how it is being built
 - [AppType_Analysis.md](AppType_Analysis.md) — why PWA first, APK second
+- [ANDROID.md](ANDROID.md) — building and installing the APK
 
 ## Running it
 
@@ -46,7 +47,8 @@ with the phone in a pocket.
 
 Screen-off recording needs the Android APK, which uses a foreground service.
 That is the intended way to use this; the web build is for development and
-testing. See [AppType_Analysis.md](AppType_Analysis.md) §2.
+testing. See [ANDROID.md](ANDROID.md) to build it, and
+[AppType_Analysis.md](AppType_Analysis.md) §2 for why.
 
 ## Deploying
 

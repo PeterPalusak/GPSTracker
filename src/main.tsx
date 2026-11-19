@@ -1,17 +1,15 @@
 /**
  * Application entry point.
  *
- * Wires the concrete implementations together — the only place that
- * chooses which LocationSource and which storage the app runs against.
- * Phase 10 swaps the source here for the native one.
+ * The only place that chooses concrete implementations, and it delegates
+ * that to `platform/index.ts` so the choice is made once, at runtime,
+ * from behind a single check.
  */
 
 import { render } from 'preact';
 import { Recorder } from './app/recorder';
 import { LogRepository } from './data/logRepository';
-import { LocalSettingsStore } from './platform/SettingsStore';
-import { WebSharer } from './platform/Sharer';
-import { WebLocationSource } from './platform/WebLocationSource';
+import { createLocationSource, createSettingsStore, createSharer } from './platform';
 import { App } from './ui/App';
 import './ui/styles.css';
 
@@ -19,18 +17,21 @@ async function main(): Promise<void> {
   const root = document.getElementById('app');
   if (!root) throw new Error('Missing #app element');
 
-  const repository = await LogRepository.open();
-  const recorder = new Recorder({
-    repository,
-    source: new WebLocationSource(),
-  });
+  const [repository, source, sharer, settingsStore] = await Promise.all([
+    LogRepository.open(),
+    createLocationSource(),
+    createSharer(),
+    createSettingsStore(),
+  ]);
+
+  const recorder = new Recorder({ repository, source });
 
   render(
     <App
       recorder={recorder}
       repository={repository}
-      sharer={new WebSharer()}
-      settingsStore={new LocalSettingsStore()}
+      sharer={sharer}
+      settingsStore={settingsStore}
     />,
     root,
   );
