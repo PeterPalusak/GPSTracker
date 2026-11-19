@@ -13,7 +13,7 @@ import type { LogMeta, Units } from '../../core/types';
 import type { LogRepository } from '../../data/logRepository';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { LogList } from '../components/LogList';
-import { StatisticsPanel } from '../components/StatisticsPanel';
+import { LogTabs } from '../components/LogTabs';
 
 interface LogListScreenProps {
   repository: LogRepository;
@@ -69,11 +69,7 @@ export function LogListScreen({
         )}
       </div>
 
-      <StatisticsPanel
-        stats={selected?.stats ?? null}
-        units={units}
-        caption={selected ? `${selected.name} · ${selected.pointCount} points` : null}
-      />
+      <LogTabs log={selected} repository={repository} units={units} />
 
       {pendingDelete && (
         <ConfirmDialog
