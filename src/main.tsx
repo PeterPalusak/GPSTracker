@@ -9,6 +9,7 @@
 import { render } from 'preact';
 import { Recorder } from './app/recorder';
 import { LogRepository } from './data/logRepository';
+import { LocalSettingsStore } from './platform/SettingsStore';
 import { WebSharer } from './platform/Sharer';
 import { WebLocationSource } from './platform/WebLocationSource';
 import { App } from './ui/App';
@@ -25,7 +26,12 @@ async function main(): Promise<void> {
   });
 
   render(
-    <App recorder={recorder} repository={repository} sharer={new WebSharer()} />,
+    <App
+      recorder={recorder}
+      repository={repository}
+      sharer={new WebSharer()}
+      settingsStore={new LocalSettingsStore()}
+    />,
     root,
   );
 }

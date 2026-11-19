@@ -72,6 +72,25 @@ export function formatDuration(ms: number): string {
     : `${minutes}:${pad(seconds)}`;
 }
 
+/**
+ * Storage usage, for the Settings screen (REQ-STO-5).
+ *
+ * Binary units, since that is what a browser's quota is measured in.
+ */
+export function formatBytes(bytes: number | null): string {
+  if (bytes === null) return 'unknown';
+  if (bytes < 1024) return `${bytes} B`;
+
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value < 10 ? 1 : 0)} ${units[unit]}`;
+}
+
 /** Observed fix rate (REQ-GPS-6). */
 export function formatFixRate(hz: number | null): string {
   return hz === null ? '—' : `${hz.toFixed(1)} Hz`;

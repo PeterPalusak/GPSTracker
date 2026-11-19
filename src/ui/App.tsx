@@ -9,7 +9,8 @@
 
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { Recorder } from '../app/recorder';
-import type { ExportFormat, LogMeta, Units } from '../core/types';
+import { useSettings } from '../app/useSettings';
+import type { LogMeta } from '../core/types';
 import type { LogRepository } from '../data/logRepository';
 import {
   openAppSettings,
@@ -18,10 +19,12 @@ import {
   watchLocationPermission,
   type LocationPermission,
 } from '../platform/permissions';
+import type { SettingsStore } from '../platform/SettingsStore';
 import type { Sharer } from '../platform/Sharer';
 import { requestPersistentStorage } from '../platform/storage';
 import { LogListScreen } from './screens/LogListScreen';
 import { MainScreen } from './screens/MainScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 
 export type Screen = 'main' | 'logs' | 'settings';
 
@@ -29,23 +32,25 @@ interface AppProps {
   recorder: Recorder;
   repository: LogRepository;
   sharer: Sharer;
+  settingsStore: SettingsStore;
 }
 
-export function App({ recorder, repository, sharer }: AppProps) {
+export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
   const [screen, setScreen] = useState<Screen>('main');
   const [permission, setPermission] = useState<LocationPermission>('unknown');
   const [lastLog, setLastLog] = useState<LogMeta | null>(null);
+  const [logCount, setLogCount] = useState(0);
   const [recovered, setRecovered] = useState<LogMeta | null>(null);
   /** Bumped whenever stored logs change, so dependent screens reload. */
   const [revision, setRevision] = useState(0);
 
-  // Units and export format are fixed until Settings exists (Phase 8).
-  const units: Units = 'km';
-  const exportFormat: ExportFormat = 'gpx';
+  const { settings, update } = useSettings(settingsStore);
+  const { units, exportFormat } = settings;
 
   const refreshLogs = useCallback(async () => {
     const logs = await repository.listLogs();
     setLastLog(logs.find((log) => log.status !== 'recording') ?? null);
+    setLogCount(logs.filter((log) => log.status !== 'recording').length);
     setRevision((n) => n + 1);
   }, [repository]);
 
@@ -134,9 +139,7 @@ export function App({ recorder, repository, sharer }: AppProps) {
       )}
 
       {screen === 'settings' && (
-        <div class="screen placeholder">
-          <p>Settings arrive in Phase 8.</p>
-        </div>
+        <SettingsScreen settings={settings} logCount={logCount} onChange={update} />
       )}
     </div>
   );

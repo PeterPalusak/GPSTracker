@@ -14,6 +14,7 @@ import { T0 } from '../core/testFixtures';
 import { LogRepository } from '../data/logRepository';
 import { FakeLocationSource } from '../platform/FakeLocationSource';
 import { FakeSharer } from '../platform/FakeSharer';
+import { MemorySettingsStore } from '../platform/SettingsStore';
 import { App } from './App';
 import { MainScreen } from './screens/MainScreen';
 
@@ -32,18 +33,18 @@ beforeEach(async () => {
 
 describe('App shell', () => {
   it('renders without throwing', () => {
-    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} settingsStore={new MemorySettingsStore()} />);
     expect(html).toContain('GPS Logger');
   });
 
   it('offers navigation to the logs and settings screens (REQ-NAV-1, REQ-NAV-7)', () => {
-    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} settingsStore={new MemorySettingsStore()} />);
     expect(html).toContain('>Logs<');
     expect(html).toContain('>Settings<');
   });
 
   it('starts on the main screen with the controls visible', () => {
-    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} settingsStore={new MemorySettingsStore()} />);
     expect(html).toContain('>Start<');
   });
 });
