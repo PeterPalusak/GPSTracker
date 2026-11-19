@@ -21,6 +21,21 @@ export interface RawFix {
   spd: number | null;
   /** Degrees from true north, or null. */
   hdg: number | null;
+
+  /**
+   * Number of satellites used in the fix, where the platform reports it.
+   *
+   * Always null on the web — the Geolocation API does not expose it. The
+   * native build can supply it from Android's GnssStatus, which turns
+   * acquisition detection from a heuristic into a fact (REQ-GPS-1).
+   */
+  satellites?: number | null;
+
+  /**
+   * Position provider, where the platform reports it: 'gps', 'network',
+   * 'fused'. Always null on the web.
+   */
+  provider?: string | null;
 }
 
 export type LocationErrorKind =

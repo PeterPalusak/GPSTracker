@@ -6,6 +6,7 @@
  * legality of each transition stays in `core/recordingMachine`.
  */
 
+import { AcquisitionGate } from '../core/acquisition';
 import { FixRateMeter } from '../core/fixRate';
 import { canApply, nextState, type RecordingEvent } from '../core/recordingMachine';
 import {
@@ -28,20 +29,6 @@ import type {
   LocationSource,
   RawFix,
 } from '../platform/LocationSource';
-
-/**
- * Accuracy at or below which a fix counts as a satellite fix, for the
- * purpose of REQ-GPS-1's "wait for a valid satellite fix".
- *
- * The web Geolocation API does not say where a position came from, and
- * accuracy is the only available proxy: a satellite fix is typically
- * 3-20 m, while a network-derived position is tens to thousands of metres.
- *
- * This gate applies to *acquisition only*. Once acquired, every fix is
- * recorded unfiltered, because outlier rejection was deliberately not
- * adopted (trap T2, accepted — see REQ-GEN-3).
- */
-export const ACQUISITION_ACCURACY_M = 50;
 
 /** No fix for this long means the signal is considered lost again. */
 const SIGNAL_STALE_MS = 6_000;
@@ -76,7 +63,7 @@ export class Recorder {
   private pauses: PauseInterval[] = [];
   private acc: StatsAccumulator = createAccumulator();
   private seq = 0;
-  private acquired = false;
+  private readonly gate = new AcquisitionGate();
   private readonly meter = new FixRateMeter();
   private lastError: LocationErrorKind | null = null;
 
@@ -124,7 +111,7 @@ export class Recorder {
     // Paused powers the receiver down (REQ-REC-7), so there is no signal
     // to report rather than a weak one.
     if (this.recording !== 'recording') return 'off';
-    if (!this.acquired) return 'acquiring';
+    if (!this.gate.acquired) return 'acquiring';
 
     const since = this.meter.sinceLast(now);
     // Acquired, but nothing recently — a tunnel, or indoors (REQ-GPS-3).
@@ -157,7 +144,7 @@ export class Recorder {
     this.pauses = [];
     this.acc = createAccumulator();
     this.seq = 0;
-    this.acquired = false;
+    this.gate.reset();
     this.lastError = null;
     this.meter.reset();
 
@@ -233,7 +220,7 @@ export class Recorder {
     this.closeOpenPause(this.now());
     await this.repo.setPauses(log.id, this.pauses);
 
-    this.acquired = false;
+    this.gate.reset();
     this.lastError = null;
     this.meter.reset();
 
@@ -266,7 +253,7 @@ export class Recorder {
     this.pauses = [];
     this.acc = createAccumulator();
     this.seq = 0;
-    this.acquired = false;
+    this.gate.reset();
     this.meter.reset();
     this.emit();
   }
@@ -329,13 +316,11 @@ export class Recorder {
     for (const fix of raw) {
       this.meter.mark(now);
 
-      if (!this.acquired) {
-        // REQ-GPS-1/REQ-GPS-2: nothing is recorded until a fix good enough
-        // to be a satellite fix arrives. Earlier ones are dropped, not stored.
-        if (fix.acc !== null && fix.acc > ACQUISITION_ACCURACY_M) continue;
-        this.acquired = true;
-      }
-      accepted.push(fix);
+      // REQ-GPS-1/REQ-GPS-2: nothing is recorded until the receiver has
+      // genuinely acquired. The gate holds qualifying fixes back and
+      // releases them together once it opens, so the first real satellite
+      // fix is kept rather than clipped off the start of the ride.
+      accepted.push(...this.gate.consider(fix));
     }
 
     if (accepted.length === 0) {

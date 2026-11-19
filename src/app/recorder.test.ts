@@ -4,7 +4,7 @@ import { METRES_PER_DEG_LAT, T0 } from '../core/testFixtures';
 import { LogRepository } from '../data/logRepository';
 import { FakeLocationSource } from '../platform/FakeLocationSource';
 import type { RawFix } from '../platform/LocationSource';
-import { ACQUISITION_ACCURACY_M, Recorder } from './recorder';
+import { Recorder } from './recorder';
 
 let repo: LogRepository;
 let source: FakeLocationSource;
@@ -79,30 +79,79 @@ describe('acquisition gate (REQ-GPS-1, REQ-GPS-3)', () => {
     expect(recorder.snapshot().signal).toBe('acquiring');
   });
 
-  it('starts recording at the first fix good enough to be a satellite fix', async () => {
+  it('records nothing until two consecutive qualifying fixes', async () => {
     const log = await recorder.start();
     source.emitOne(fix(0, { acc: 1_000 }));
-    source.emitOne(fix(5, { acc: ACQUISITION_ACCURACY_M }));
+    source.emitOne(fix(5, { acc: 10 })); // first good one: held back
+    await recorder.settled();
+    expect(await repo.countPoints(log.id)).toBe(0);
+
+    source.emitOne(fix(10, { acc: 10 })); // second: acquisition
+    await recorder.settled();
+    // Both qualifying fixes land — the held-back one is not thrown away.
+    expect(await repo.countPoints(log.id)).toBe(2);
+  });
+
+  it('treats a non-null altitude as a satellite fix even at loose accuracy', async () => {
+    // Wi-Fi and cell positioning are 2-D; an altitude implies satellites.
+    const log = await recorder.start();
+    source.emitOne(fix(0, { acc: 60, alt: 212 }));
+    source.emitOne(fix(10, { acc: 60, alt: 213 }));
     await recorder.settled();
 
-    expect(await repo.countPoints(log.id)).toBe(1);
+    expect(await repo.countPoints(log.id)).toBe(2);
+    expect(recorder.snapshot().signal).toBe('tracking');
+  });
+
+  it('ignores a lone plausible fix among poor ones', async () => {
+    const log = await recorder.start();
+    source.emitOne(fix(0, { acc: 2_000 }));
+    source.emitOne(fix(5, { acc: 10 }));
+    source.emitOne(fix(10, { acc: 2_000 }));
+    await recorder.settled();
+
+    expect(await repo.countPoints(log.id)).toBe(0);
+  });
+
+  it('uses the satellite count where a native source supplies one', async () => {
+    const log = await recorder.start();
+    source.emitOne(fix(0, { acc: 5, satellites: 2 })); // too few for a 3-D fix
+    source.emitOne(fix(5, { acc: 5, satellites: 2 }));
+    await recorder.settled();
+    expect(await repo.countPoints(log.id)).toBe(0);
+
+    source.emitOne(fix(10, { acc: 40, satellites: 9 }));
+    source.emitOne(fix(20, { acc: 40, satellites: 9 }));
+    await recorder.settled();
+    expect(await repo.countPoints(log.id)).toBe(2);
   });
 
   it('keeps recording poor fixes once acquired, without filtering (trap T2)', async () => {
     const log = await recorder.start();
     source.emitOne(fix(0, { acc: 5 }));
-    source.emitOne(fix(10, { acc: 900 }));
+    source.emitOne(fix(10, { acc: 5 }));
+    source.emitOne(fix(20, { acc: 900 }));
     await recorder.settled();
 
     // The gate is for acquisition only; outlier rejection was not adopted.
-    expect(await repo.countPoints(log.id)).toBe(2);
+    expect(await repo.countPoints(log.id)).toBe(3);
   });
 
-  it('accepts a fix that reports no accuracy at all', async () => {
+  it('reacquires from scratch after a pause (REQ-REC-9a)', async () => {
     const log = await recorder.start();
-    source.emitOne(fix(0, { acc: null }));
+    source.emitOne(fix(0, { acc: 5 }));
+    source.emitOne(fix(10, { acc: 5 }));
     await recorder.settled();
-    expect(await repo.countPoints(log.id)).toBe(1);
+    await recorder.pause();
+    await recorder.resume();
+
+    source.emitOne(fix(20, { acc: 5 })); // first after resume: held back
+    await recorder.settled();
+    expect(await repo.countPoints(log.id)).toBe(2);
+
+    source.emitOne(fix(30, { acc: 5 }));
+    await recorder.settled();
+    expect(await repo.countPoints(log.id)).toBe(4);
   });
 
   it('falls back to acquiring when fixes stop arriving (REQ-GPS-3)', async () => {

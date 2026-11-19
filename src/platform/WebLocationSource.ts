@@ -32,6 +32,10 @@ export function toRawFix(position: GeolocationPosition): RawFix {
     acc: c.accuracy ?? null,
     spd: c.speed ?? null,
     hdg: c.heading ?? null,
+    // The web API exposes neither; acquisition falls back to altitude and
+    // accuracy (see core/acquisition.ts).
+    satellites: null,
+    provider: null,
   };
 }
 
