@@ -22,6 +22,7 @@ import {
 import type { SettingsStore } from '../platform/SettingsStore';
 import type { Sharer } from '../platform/Sharer';
 import { requestPersistentStorage } from '../platform/storage';
+import { InstallHint } from './components/InstallHint';
 import { LogListScreen } from './screens/LogListScreen';
 import { MainScreen } from './screens/MainScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -104,6 +105,8 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
           </button>
         </nav>
       </header>
+
+      <InstallHint />
 
       {recovered && (
         <p class="notice">

@@ -816,3 +816,22 @@ body {
     min-height: 60px;
   }
 }
+
+/* --- Install hint and inline notices -------------------------------------- */
+
+.notice-inline {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  padding: 10px 12px;
+}
+
+.notice-action {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}

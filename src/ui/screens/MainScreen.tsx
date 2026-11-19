@@ -9,6 +9,7 @@
 import { useCallback, useState } from 'preact/hooks';
 import type { Recorder } from '../../app/recorder';
 import { useRecorderSnapshot } from '../../app/useRecorder';
+import { useWakeLock } from '../../app/useWakeLock';
 import { requiresConfirmation, type RecordingEvent } from '../../core/recordingMachine';
 import type { LogMeta, Units } from '../../core/types';
 import type { LocationPermission } from '../../platform/permissions';
@@ -43,6 +44,10 @@ export function MainScreen({
   const snapshot = useRecorderSnapshot(recorder);
   const [pending, setPending] = useState<RecordingEvent | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // REQ-BG-1/REQ-BG-2: held while a log is open, through pauses as well,
+  // released on Stop or Cancel.
+  const wakeLock = useWakeLock(snapshot.recording !== 'idle');
 
   const apply = useCallback(
     async (event: RecordingEvent) => {
@@ -105,6 +110,20 @@ export function MainScreen({
           />
         ) : (
           <ControlButtons state={snapshot.recording} busy={busy} onEvent={handleEvent} />
+        )}
+
+        {/* REQ-BG-4: say that the screen is being held on, and why. */}
+        {open && wakeLock.held && (
+          <p class="notice notice-inline muted">
+            Keeping the screen on so recording continues.
+          </p>
+        )}
+
+        {open && wakeLock.supported === false && (
+          <p class="notice notice-inline muted">
+            This browser cannot keep the screen awake — recording stops when the
+            screen switches off.
+          </p>
         )}
 
         {snapshot.lastError === 'permission-denied' && open && (
