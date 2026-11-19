@@ -19,6 +19,7 @@ import {
   type LocationPermission,
 } from '../platform/permissions';
 import { requestPersistentStorage } from '../platform/storage';
+import { LogListScreen } from './screens/LogListScreen';
 import { MainScreen } from './screens/MainScreen';
 
 export type Screen = 'main' | 'logs' | 'settings';
@@ -33,6 +34,8 @@ export function App({ recorder, repository }: AppProps) {
   const [permission, setPermission] = useState<LocationPermission>('unknown');
   const [lastLog, setLastLog] = useState<LogMeta | null>(null);
   const [recovered, setRecovered] = useState<LogMeta | null>(null);
+  /** Bumped whenever stored logs change, so dependent screens reload. */
+  const [revision, setRevision] = useState(0);
 
   // Units are fixed until Settings exists (Phase 8).
   const units: Units = 'km';
@@ -40,6 +43,7 @@ export function App({ recorder, repository }: AppProps) {
   const refreshLogs = useCallback(async () => {
     const logs = await repository.listLogs();
     setLastLog(logs.find((log) => log.status !== 'recording') ?? null);
+    setRevision((n) => n + 1);
   }, [repository]);
 
   useEffect(() => {
@@ -116,9 +120,12 @@ export function App({ recorder, repository }: AppProps) {
       )}
 
       {screen === 'logs' && (
-        <div class="screen placeholder">
-          <p>The list of logs arrives in Phase 5.</p>
-        </div>
+        <LogListScreen
+          repository={repository}
+          units={units}
+          revision={revision}
+          onLogsChanged={() => void refreshLogs()}
+        />
       )}
 
       {screen === 'settings' && (

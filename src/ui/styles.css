@@ -285,6 +285,107 @@ body {
   color: var(--muted);
 }
 
+/* --- Log list ------------------------------------------------------------- */
+
+.log-list-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-list-empty,
+.log-list-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  text-align: center;
+}
+
+.log-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 0 8px 0 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.log-row.is-selected {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.log-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 8px 14px 16px;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.log-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.log-name {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.log-row-meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-warn {
+  background: rgba(210, 153, 34, 0.18);
+  color: #d29922;
+}
+
+.log-row-delete {
+  flex: none;
+  align-self: center;
+  padding: 10px 14px;
+  border: 1px solid rgba(248, 81, 73, 0.35);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* --- Notices and permission ---------------------------------------------- */
 
 .notice {

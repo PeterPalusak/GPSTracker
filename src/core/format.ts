@@ -77,6 +77,23 @@ export function formatFixRate(hz: number | null): string {
   return hz === null ? '—' : `${hz.toFixed(1)} Hz`;
 }
 
+/**
+ * Friendly date and time for a log, in the device's local zone.
+ *
+ * Log *names* are UTC (REQ-REC-2) so they sort correctly and never shift
+ * across a timezone or DST boundary. That makes them unfriendly to read,
+ * so the list shows local time alongside.
+ */
+export function formatLogDateTime(startedAt: number): string {
+  return new Date(startedAt).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export interface StatisticRow {
   label: string;
   value: string;
