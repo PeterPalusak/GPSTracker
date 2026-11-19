@@ -1,25 +1,29 @@
 /**
  * Application entry point.
  *
- * A placeholder until Phase 4 builds the main screen. Phase 1 delivers the
- * pure core only; this exists so the project builds and the dev server runs.
+ * Wires the concrete implementations together — the only place that
+ * chooses which LocationSource and which storage the app runs against.
+ * Phase 10 swaps the source here for the native one.
  */
 
 import { render } from 'preact';
-import { controlsFor } from './core/recordingMachine';
+import { Recorder } from './app/recorder';
+import { LogRepository } from './data/logRepository';
+import { WebLocationSource } from './platform/WebLocationSource';
+import { App } from './ui/App';
+import './ui/styles.css';
 
-function Placeholder() {
-  const controls = controlsFor('idle');
-  return (
-    <main>
-      <h1>GPS Logger</h1>
-      <p>Phase 1 — core domain only. The UI arrives in Phase 4.</p>
-      <p>
-        Primary control would read <strong>{controls.primary.label}</strong>.
-      </p>
-    </main>
-  );
+async function main(): Promise<void> {
+  const root = document.getElementById('app');
+  if (!root) throw new Error('Missing #app element');
+
+  const repository = await LogRepository.open();
+  const recorder = new Recorder({
+    repository,
+    source: new WebLocationSource(),
+  });
+
+  render(<App recorder={recorder} repository={repository} />, root);
 }
 
-const root = document.getElementById('app');
-if (root) render(<Placeholder />, root);
+void main();
