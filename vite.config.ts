@@ -3,9 +3,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // Served from a project page on GitHub Pages, so assets resolve relative
-  // to the deployed folder rather than the domain root.
-  base: './',
+  // Relative by default, so the build works from any subfolder or from
+  // file://. The Pages deploy sets an explicit base instead, because the
+  // service worker's navigation fallback needs a real path rather than a
+  // relative one.
+  base: process.env.VITE_BASE ?? './',
 
   plugins: [
     preact(),
