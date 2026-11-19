@@ -5,6 +5,7 @@ import { computeStats } from '../../core/statistics';
 import { T0, straightRun } from '../../core/testFixtures';
 import type { LogMeta, Stats, Units } from '../../core/types';
 import { LogRepository } from '../../data/logRepository';
+import { FakeSharer } from '../../platform/FakeSharer';
 import { LogList } from '../components/LogList';
 import { LogListScreen } from './LogListScreen';
 
@@ -113,7 +114,14 @@ describe('LogList (REQ-NAV-2, REQ-NAV-3)', () => {
 describe('LogListScreen', () => {
   it('renders without throwing', () => {
     const html = render(
-      <LogListScreen repository={repo} units={units} revision={0} onLogsChanged={() => {}} />,
+      <LogListScreen
+        repository={repo}
+        sharer={new FakeSharer()}
+        units={units}
+        exportFormat="gpx"
+        revision={0}
+        onLogsChanged={() => {}}
+      />,
     );
     expect(html).toContain('Loading');
   });

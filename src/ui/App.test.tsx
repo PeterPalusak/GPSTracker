@@ -13,6 +13,7 @@ import { Recorder } from '../app/recorder';
 import { T0 } from '../core/testFixtures';
 import { LogRepository } from '../data/logRepository';
 import { FakeLocationSource } from '../platform/FakeLocationSource';
+import { FakeSharer } from '../platform/FakeSharer';
 import { App } from './App';
 import { MainScreen } from './screens/MainScreen';
 
@@ -31,18 +32,18 @@ beforeEach(async () => {
 
 describe('App shell', () => {
   it('renders without throwing', () => {
-    const html = render(<App recorder={recorder} repository={repo} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
     expect(html).toContain('GPS Logger');
   });
 
   it('offers navigation to the logs and settings screens (REQ-NAV-1, REQ-NAV-7)', () => {
-    const html = render(<App recorder={recorder} repository={repo} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
     expect(html).toContain('>Logs<');
     expect(html).toContain('>Settings<');
   });
 
   it('starts on the main screen with the controls visible', () => {
-    const html = render(<App recorder={recorder} repository={repo} />);
+    const html = render(<App recorder={recorder} repository={repo} sharer={new FakeSharer()} />);
     expect(html).toContain('>Start<');
   });
 });

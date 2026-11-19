@@ -1,13 +1,12 @@
 /**
  * The tabbed view of a selected log (REQ-NAV-10…14).
  *
- * Positions are loaded once per log and shared by the Map and Elevation
- * tabs, rather than re-read on every tab switch.
+ * Positions are supplied by the screen rather than loaded here, so that
+ * Export can reach them without an await inside the tap handler.
  */
 
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import type { Fix, LogMeta, Units } from '../../core/types';
-import type { LogRepository } from '../../data/logRepository';
 import { ElevationTab } from './ElevationTab';
 import { MapTab } from './MapTab';
 import { StatisticsPanel } from './StatisticsPanel';
@@ -22,36 +21,13 @@ const TABS: Array<{ id: LogTab; label: string }> = [
 
 interface LogTabsProps {
   log: LogMeta | null;
-  repository: LogRepository;
+  fixes: readonly Fix[];
+  loading: boolean;
   units: Units;
 }
 
-export function LogTabs({ log, repository, units }: LogTabsProps) {
+export function LogTabs({ log, fixes, loading, units }: LogTabsProps) {
   const [tab, setTab] = useState<LogTab>('statistics');
-  const [fixes, setFixes] = useState<Fix[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!log) {
-      setFixes([]);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-
-    void (async () => {
-      const points = await repository.readPoints(log.id);
-      if (!cancelled) {
-        setFixes(points);
-        setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [log, repository]);
 
   if (!log) {
     return (
@@ -88,7 +64,11 @@ export function LogTabs({ log, repository, units }: LogTabsProps) {
         )}
 
         {tab === 'map' &&
-          (loading ? <p class="muted tab-empty">Loading positions…</p> : <MapTab fixes={fixes} />)}
+          (loading ? (
+            <p class="muted tab-empty">Loading positions…</p>
+          ) : (
+            <MapTab fixes={fixes} />
+          ))}
 
         {tab === 'elevation' &&
           (loading ? (

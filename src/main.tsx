@@ -9,6 +9,7 @@
 import { render } from 'preact';
 import { Recorder } from './app/recorder';
 import { LogRepository } from './data/logRepository';
+import { WebSharer } from './platform/Sharer';
 import { WebLocationSource } from './platform/WebLocationSource';
 import { App } from './ui/App';
 import './ui/styles.css';
@@ -23,7 +24,10 @@ async function main(): Promise<void> {
     source: new WebLocationSource(),
   });
 
-  render(<App recorder={recorder} repository={repository} />, root);
+  render(
+    <App recorder={recorder} repository={repository} sharer={new WebSharer()} />,
+    root,
+  );
 }
 
 void main();

@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { Recorder } from '../app/recorder';
-import type { LogMeta, Units } from '../core/types';
+import type { ExportFormat, LogMeta, Units } from '../core/types';
 import type { LogRepository } from '../data/logRepository';
 import {
   openAppSettings,
@@ -18,6 +18,7 @@ import {
   watchLocationPermission,
   type LocationPermission,
 } from '../platform/permissions';
+import type { Sharer } from '../platform/Sharer';
 import { requestPersistentStorage } from '../platform/storage';
 import { LogListScreen } from './screens/LogListScreen';
 import { MainScreen } from './screens/MainScreen';
@@ -27,9 +28,10 @@ export type Screen = 'main' | 'logs' | 'settings';
 interface AppProps {
   recorder: Recorder;
   repository: LogRepository;
+  sharer: Sharer;
 }
 
-export function App({ recorder, repository }: AppProps) {
+export function App({ recorder, repository, sharer }: AppProps) {
   const [screen, setScreen] = useState<Screen>('main');
   const [permission, setPermission] = useState<LocationPermission>('unknown');
   const [lastLog, setLastLog] = useState<LogMeta | null>(null);
@@ -37,8 +39,9 @@ export function App({ recorder, repository }: AppProps) {
   /** Bumped whenever stored logs change, so dependent screens reload. */
   const [revision, setRevision] = useState(0);
 
-  // Units are fixed until Settings exists (Phase 8).
+  // Units and export format are fixed until Settings exists (Phase 8).
   const units: Units = 'km';
+  const exportFormat: ExportFormat = 'gpx';
 
   const refreshLogs = useCallback(async () => {
     const logs = await repository.listLogs();
@@ -122,7 +125,9 @@ export function App({ recorder, repository }: AppProps) {
       {screen === 'logs' && (
         <LogListScreen
           repository={repository}
+          sharer={sharer}
           units={units}
+          exportFormat={exportFormat}
           revision={revision}
           onLogsChanged={() => void refreshLogs()}
         />
