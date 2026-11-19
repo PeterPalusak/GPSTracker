@@ -1,0 +1,24 @@
+{
+  "name": "gps-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GPS track logger for car, motorbike and bicycle. PWA, later wrapped as an Android APK.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "preact": "^10.27.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^5.1.1"
+  }
+}

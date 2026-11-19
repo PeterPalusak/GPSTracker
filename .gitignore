@@ -1,0 +1,25 @@
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+.vite/
+
+# Capacitor / Android (added from Phase 10)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+*.keystore
+!debug.keystore
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
