@@ -31,29 +31,27 @@
 
 ## 3. Recording controls
 
-The main screen shall provide four recording controls: **Start**, **Stop**, **Pause**, **Cancel**.
+The main screen shall provide three recording controls: a combined **Start / Stop** button, a combined **Pause / Re-Start** button, and **Cancel**.
 
 ### 3.0 Initial state
 
 | ID | Requirement |
 |---|---|
-| REQ-REC-0 | When the app is opened, only the Start button shall be enabled. The Stop, Pause and Cancel buttons shall be disabled. |
+| REQ-REC-0 | When the app is opened, the combined button shall show **Start** and shall not be highlighted. The Pause and Cancel buttons shall be disabled. |
 
-### 3.1 Start
+### 3.1 Start / Stop button
+
+A single button serves both functions. Its label and appearance indicate whether a log is open.
 
 | ID | Requirement |
 |---|---|
-| REQ-REC-1 | **Start** shall begin GPS logging. |
+| REQ-REC-1 | Pressing **Start** shall begin GPS logging. |
 | REQ-REC-2 | The new log shall be named using the pattern `yyyymmdd-hhmm` (year, month, day, hour, minute) in **UTC**. |
-| REQ-REC-3 | After **Start** is pressed, the Start button shall become disabled but remain visually highlighted. The highlight indicates that logging is running, including while the app is still waiting for the first satellite fix (REQ-GPS-1). |
-| REQ-REC-4 | After **Start** is pressed, the Stop, Pause and Cancel buttons shall be enabled. |
-
-### 3.2 Stop
-
-| ID | Requirement |
-|---|---|
-| REQ-REC-5 | **Stop** shall finish GPS logging and save the log to local storage (see §7). No file is written to the filesystem at this point; files are produced by Export (see §4.3). |
-| REQ-REC-6 | After **Stop** is pressed, the Stop, Pause and Cancel buttons shall be disabled and the Start button shall be enabled. |
+| REQ-REC-3 | After **Start** is pressed, the button shall change its label to **Stop** and shall become highlighted. It remains enabled. The highlight indicates that a log is open, including while the app is still waiting for the first satellite fix (REQ-GPS-1). |
+| REQ-REC-4 | After **Start** is pressed, the Pause and Cancel buttons shall be enabled. |
+| REQ-REC-5 | Pressing **Stop** shall finish GPS logging and save the log to local storage (see §7). No file is written to the filesystem at this point; files are produced by Export (see §4.3). |
+| REQ-REC-6 | After **Stop** is pressed, the button shall revert to **Start** and shall lose its highlight. The Pause and Cancel buttons shall be disabled. |
+| REQ-REC-6a | **Stop** shall be available from both the recording and the paused state. Pressing it while paused finishes the log in the same way. |
 
 ### 3.3 Pause / Re-Start
 
@@ -63,9 +61,10 @@ The main screen shall provide four recording controls: **Start**, **Stop**, **Pa
 | REQ-REC-8 | While paused, the button label shall change to **Re-Start**. |
 | REQ-REC-9 | Pressing **Re-Start** shall resume logging into the same log, and the button label shall change back to **Pause**. |
 | REQ-REC-9a | Because the receiver was switched off (REQ-REC-7), resuming requires the satellite fix to be reacquired. REQ-GPS-1 and REQ-GPS-2 apply again on resume: no positions are recorded until a fix is available, and the "acquiring signal" indication is shown. |
-| REQ-REC-10 | While paused, the Start, Stop and Cancel buttons shall be enabled. |
-| REQ-REC-10a | While paused, pressing **Start** shall behave identically to pressing **Re-Start**: logging resumes into the same log. Start shall never create a new log while a log is open. |
-| REQ-REC-11 | After logging resumes, the Start button shall be disabled and the Stop and Cancel buttons shall be enabled. |
+| REQ-REC-9b | The Pause / Re-Start button may be pressed any number of times within a single log. |
+| ~~REQ-REC-10~~ | *Withdrawn 2026-11-19 — superseded by the combined Start / Stop button; there is no separate Start button while a log is open.* |
+| ~~REQ-REC-10a~~ | *Withdrawn 2026-11-19 — superseded for the same reason.* |
+| REQ-REC-11 | While paused, the combined button shall continue to show **Stop**, remain highlighted and remain enabled. The Cancel button shall remain enabled. |
 
 ### 3.4 Cancel
 
@@ -74,7 +73,7 @@ The main screen shall provide four recording controls: **Start**, **Stop**, **Pa
 | REQ-REC-12 | **Cancel** shall stop GPS logging and discard the log. |
 | REQ-REC-12a | **Cancel** shall require explicit confirmation before the log is discarded. The action is destructive and cannot be undone. |
 | REQ-REC-13 | The log's stored record and all its recorded positions shall be deleted. Any file previously produced by Export and handed to another app is outside the app's control and is not affected. |
-| REQ-REC-14 | After **Cancel** is pressed, the Stop, Pause and Cancel buttons shall be disabled and the Start button shall be enabled. |
+| REQ-REC-14 | After **Cancel** is pressed, the combined button shall revert to **Start** and lose its highlight, and the Pause and Cancel buttons shall be disabled. |
 
 ### 3.5 Interrupted recordings
 
@@ -86,11 +85,13 @@ The main screen shall provide four recording controls: **Start**, **Stop**, **Pa
 
 ### 3.6 Button state summary
 
-| State | Start | Stop | Pause / Re-Start | Cancel |
-|---|---|---|---|---|
-| Idle (no recording) — including on app open, REQ-REC-0 | Enabled | Disabled | Disabled | Disabled |
-| Recording | Disabled, highlighted | Enabled | Enabled (*Pause*) | Enabled |
-| Paused | Enabled (resumes, same as *Re-Start* — REQ-REC-10a) | Enabled | Enabled (*Re-Start*) | Enabled |
+| State | Start / Stop button | Pause / Re-Start button | Cancel |
+|---|---|---|---|
+| Idle (no log open) — including on app open, REQ-REC-0 | **Start**, enabled, not highlighted | Disabled | Disabled |
+| Recording | **Stop**, enabled, highlighted | **Pause**, enabled | Enabled |
+| Paused | **Stop**, enabled, highlighted | **Re-Start**, enabled | Enabled |
+
+The highlight on the combined button means *a log is open*. Whether that log is currently recording or paused is shown by the second button's label (**Pause** vs **Re-Start**) and by the signal indication (REQ-GPS-2, REQ-GPS-6).
 
 ## 4. Additional screens
 

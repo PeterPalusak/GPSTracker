@@ -29,9 +29,13 @@ One consequence of the G9 decision deserves emphasis and is now recorded as REQ-
 
 ## 1. Blockers
 
-### B1 — Start is enabled while paused (REQ-REC-10) — ✅ RESOLVED
+### B1 — Start is enabled while paused (REQ-REC-10) — ✅ RESOLVED, then ⤳ SUPERSEDED
 
-**Resolution (2026-11-16):** while paused, Start is enabled and acts as an alias for Re-Start — it resumes logging into the same log. Start never creates a new log while a log is open. Recorded as REQ-REC-10a.
+**Superseded (2026-11-19):** Start and Stop were merged into a single button, so there is no Start button while a log is open and the question can no longer arise. REQ-REC-10 and REQ-REC-10a are withdrawn. See §9c.
+
+The merge is a better answer than the one below, because it removes the ambiguity structurally rather than defining it away: a control that cannot be pressed in the wrong state cannot be pressed in the wrong state.
+
+**Original resolution (2026-11-16), for the record:** while paused, Start is enabled and acts as an alias for Re-Start — it resumes logging into the same log. Start never creates a new log while a log is open. Recorded as REQ-REC-10a.
 
 This is the safe outcome. The risk in this requirement was an interpretation where Start began a *new* log, so a single mis-tap during a fuel stop would discard a two-hour ride. That interpretation is now explicitly excluded, and no confirmation dialog is needed.
 
@@ -210,7 +214,7 @@ Required mitigation: a stationary deadband — do not accumulate distance while 
 |---|---|
 | Amend | REQ-REC-2 — add seconds to the name; store UTC |
 | ~~Amend~~ Done | REQ-REC-5 / REQ-REC-13 — "save" means commit to local storage; files exist only on Export. §4.3 (REQ-EXP) and §7 (REQ-STO) added |
-| ~~Amend~~ Done | REQ-REC-10a — Start while paused resumes the open log |
+| ~~Amend~~ Superseded | REQ-REC-10a — withdrawn by the Start/Stop merge (§9c) |
 | Amend | REQ-SET-1 / REQ-SET-2 — Metric / Imperial / Nautical; drop yards |
 | ~~Amend~~ Done | REQ-SET-3/4 — setting removed, record at device rate; REQ-SET-5 withdrawn |
 | Amend | REQ-SET-7 — KML export uses `gx:Track` |
@@ -313,7 +317,7 @@ Closing the items raised in §5 and in the blocker resolutions, plus five gaps f
 
 | # | Decision | Recorded as |
 |---|---|---|
-| 1 — highlighted Start | **Resolved.** Start is disabled once logging runs; the highlight is retained deliberately as the recording indicator, including while the first fix is still being acquired. No separate badge. | REQ-REC-3 |
+| 1 — highlighted Start | **Resolved, then superseded 2026-11-19** by the Start/Stop merge — the button is now enabled in every state, so the disabled-but-highlighted concern disappears. See §9c. | REQ-REC-3 |
 | 2 — statistics layout | **Deferred.** Build it, look at it, decide then. | — |
 | 3 — auto-pause | **Rejected.** Not wanted. | — |
 | 4 — fix-rate indicator | **Adopted.** Read-only display of the current fix rate. | REQ-GPS-6 |
@@ -345,6 +349,39 @@ Not requirements, but agreed ways of working:
 
 - **Spike the APK early**, before the UI is finished — a throwaway build with Start, Stop, a point count and the notification, then a real ride on both phones. This answers the genuinely uncertain questions (does the service survive Samsung's battery management, does "Allow all the time" work, does the plugin batch, does the WebView get reclaimed, what does it cost in battery) while they are still cheap to act on.
 - **Acceptance testing happens on the APK, on real rides.** A feature verified in the browser is verified for development, not for use. Long logs, interrupted recordings, storage growth and recovery after a kill only appear in the real execution model.
+
+---
+
+## 9c. Control layout change — combined Start / Stop button (2026-11-19)
+
+**Change.** The four recording controls become three. Start and Stop merge into one button that toggles label and highlight; Pause / Re-Start and Cancel are unchanged in function but are now disabled whenever no log is open.
+
+| State | Start / Stop | Pause / Re-Start | Cancel |
+|---|---|---|---|
+| Idle | **Start**, enabled, plain | Disabled | Disabled |
+| Recording | **Stop**, enabled, highlighted | **Pause**, enabled | Enabled |
+| Paused | **Stop**, enabled, highlighted | **Re-Start**, enabled | Enabled |
+
+**Requirements affected:** REQ-REC-0, 3, 4, 6, 11, 14 rewritten; REQ-REC-6a and REQ-REC-9b added; REQ-REC-10 and REQ-REC-10a withdrawn.
+
+### Why this is an improvement, not just a preference
+
+- **It dissolves B1 rather than resolving it.** The original problem was that Start had no defined meaning while a log was open. With one button, that state is unreachable by construction — the strongest form of fix available.
+- **It removes the disabled-but-highlighted control** (§9b #1). A highlighted *enabled* Stop button is an ordinary UI pattern; a highlighted *disabled* button is the pattern users read as a bug. The merge eliminates the oddity instead of styling around it.
+- **Fewer dead controls.** Previously two of four buttons were disabled in the idle state. Now one of three is live, and it is the only one that does anything.
+- **It matches the mental model.** There is one log, and the big button opens and closes it. Pause modulates a log that is already open.
+
+### The one thing this change introduced
+
+The highlight now means *a log is open*, which is true in both the recording and paused states. So the combined button alone no longer tells the user whether positions are actually being recorded.
+
+That information has to come from somewhere else, and it already does — the second button reads **Re-Start** rather than **Pause**, and the signal indicator (REQ-GPS-2, REQ-GPS-6) shows no activity while paused. Recorded in REQ-REC-11 and noted under the state table in the requirements.
+
+Worth considering during Phase 4: a visually distinct highlight for paused versus recording — solid while recording, outlined or dimmed while paused. Not specified as a requirement, because it is exactly the kind of thing best judged on a real screen.
+
+### Implementation impact
+
+**None on the state machine.** `RecordingState` remains `idle | recording | paused`; only the projection from state to button labels and styles changes. This is the orthogonal-state design in [Implementation_Plan.md](Implementation_Plan.md) §3 doing its job — a control-layout change that would otherwise ripple through the recorder stops at the view layer.
 
 ---
 
