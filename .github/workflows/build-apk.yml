@@ -36,7 +36,10 @@ jobs:
           # Android Gradle Plugin 8.x requires 17 or newer.
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      # No setup-android action: its v3 release is pinned to an old command-line
+      # tools build, and both runs of this workflow failed inside it before any
+      # project step ran. The runner already has the Android SDK at
+      # $ANDROID_HOME with licences accepted, so use that directly.
 
       - name: Install the SDK packages this project needs
         # The runner image ships some platforms but not necessarily the one
@@ -44,7 +47,16 @@ jobs:
         # confusing Gradle failure into a step that either works or says
         # exactly what is missing.
         run: |
-          sdkmanager --install \
+          SDKMANAGER=$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager not found (looked at $SDKMANAGER)."
+            echo "ANDROID_HOME=$ANDROID_HOME"
+            ls -la "$ANDROID_HOME" "$ANDROID_HOME/cmdline-tools" || true
+            exit 1
+          fi
+          # Accept any outstanding licences; harmless if already accepted.
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install \
             "platforms;android-36" \
             "build-tools;36.0.0" \
             "platform-tools"
