@@ -67,8 +67,11 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+      # `cap sync` copies dist/ into the Android project, and dist/ is not in
+      # git. Plain `npx cap sync` fails on a fresh checkout; `cap:sync` builds
+      # the web app first.
       - name: Build web assets and sync into the Android project
-        run: npx cap sync android
+        run: npm run cap:sync
 
       - name: Assemble debug APK
         working-directory: android
