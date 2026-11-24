@@ -565,8 +565,12 @@ body {
 
 /* --- Map ------------------------------------------------------------------ */
 
+/* Leaflet sets z-indexes up to 1000 on its controls. Isolating the map keeps
+   them inside this tab, so app dialogs (which are above the whole tab) are
+   never painted underneath the map. */
 .map-tab {
   position: relative;
+  isolation: isolate;
 }
 
 .map-canvas {
@@ -772,6 +776,8 @@ body {
 .scrim {
   position: fixed;
   inset: 0;
+  /* Above everything in the app, including any map or control. */
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
