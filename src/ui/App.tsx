@@ -10,6 +10,9 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { Recorder } from '../app/recorder';
 import { useSettings } from '../app/useSettings';
+import { useWantedSpeedAlert } from '../app/useWantedSpeedAlert';
+import { kmhToMps } from '../core/performance/constants';
+import { formatSpeed } from '../core/format';
 import type { LogMeta } from '../core/types';
 import type { LogRepository } from '../data/logRepository';
 import { isNativePlatform, onAppResume, openAppSettings } from '../platform';
@@ -22,12 +25,14 @@ import {
 import type { SettingsStore } from '../platform/SettingsStore';
 import type { Sharer } from '../platform/Sharer';
 import { requestPersistentStorage } from '../platform/storage';
+import { AlertOverlay } from './components/AlertOverlay';
 import { InstallHint } from './components/InstallHint';
+import { PerformanceScreen } from './screens/PerformanceScreen';
 import { LogListScreen } from './screens/LogListScreen';
 import { MainScreen } from './screens/MainScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
-export type Screen = 'main' | 'logs' | 'settings';
+export type Screen = 'main' | 'performance' | 'logs' | 'settings';
 
 interface AppProps {
   recorder: Recorder;
@@ -47,6 +52,14 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
 
   const { settings, update } = useSettings(settingsStore);
   const { units, exportFormat } = settings;
+
+  // The alert runs in the shell, so it still fires on another screen (§8).
+  const alarmCount = useWantedSpeedAlert(recorder, settings.wantedSpeedKmh);
+  const wantedLabel = (() => {
+    if (settings.wantedSpeedKmh === null) return null;
+    const speed = formatSpeed(kmhToMps(settings.wantedSpeedKmh), units);
+    return `${speed.value} ${speed.unit}`;
+  })();
 
   const refreshLogs = useCallback(async () => {
     const logs = await repository.listLogs();
@@ -105,6 +118,13 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
         <nav>
           <button
             type="button"
+            class={`nav-btn${screen === 'performance' ? ' is-active' : ''}`}
+            onClick={() => setScreen('performance')}
+          >
+            Performance
+          </button>
+          <button
+            type="button"
             class={`nav-btn${screen === 'logs' ? ' is-active' : ''}`}
             onClick={() => setScreen('logs')}
           >
@@ -130,6 +150,35 @@ export function App({ recorder, repository, sharer, settingsStore }: AppProps) {
           </button>
         </p>
       )}
+
+      {/*
+        Mounted for the life of the app and hidden when not in use, so that
+        readiness, the wake lock and the wanted-speed alert keep running while
+        the user is on another screen during a run.
+      */}
+      <div hidden={screen !== 'performance'}>
+        <PerformanceScreen
+          recorder={recorder}
+          repository={repository}
+          sharer={sharer}
+          settings={settings}
+          onSettingsChange={update}
+          units={units}
+          permission={permission}
+          canOpenSettings={isNativePlatform()}
+          indicative={!isNativePlatform()}
+          onRequestPermission={() => void handleRequestPermission()}
+          onOpenSettings={() => void handleOpenSettings()}
+          revision={revision}
+          onLogsChanged={() => void refreshLogs()}
+        />
+      </div>
+
+      <AlertOverlay
+        count={alarmCount}
+        vibrate={settings.alertVibration}
+        wantedLabel={wantedLabel}
+      />
 
       {screen === 'main' && (
         <MainScreen

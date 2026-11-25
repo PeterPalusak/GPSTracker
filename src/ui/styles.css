@@ -841,3 +841,281 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* --- Performance ---------------------------------------------------------- */
+
+/* The screens are kept mounted and hidden; the attribute must win over display rules. */
+[hidden] {
+  display: none !important;
+}
+
+.readiness {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.readiness-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.readiness-acquiring .readiness-dot {
+  background: #d29922;
+  animation: readiness-pulse 1.2s ease-in-out infinite;
+}
+
+.readiness-ready .readiness-dot {
+  background: var(--live);
+  box-shadow: 0 0 0 4px rgba(46, 160, 67, 0.25);
+}
+
+.readiness-ready .readiness-label {
+  color: var(--live);
+  font-weight: 700;
+}
+
+.readiness-detail {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@keyframes readiness-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.perf-vehicle {
+  flex: 1 1 auto;
+}
+
+.perf-log-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.perf-log-select select,
+.wanted-custom input {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.wanted {
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.wanted-presets {
+  flex-wrap: wrap;
+}
+
+.wanted-custom {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wanted-custom input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wanted-notice {
+  margin-top: 10px;
+}
+
+.wanted-notice p {
+  margin: 0 0 8px;
+}
+
+.perf-panel {
+  margin-top: 8px;
+}
+
+.perf-summary {
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.perf-table-wrap {
+  overflow-x: auto;
+}
+
+.perf-table th,
+.perf-table td {
+  white-space: pre-line;
+  vertical-align: top;
+}
+
+.perf-table th[scope='row'] {
+  white-space: nowrap;
+  text-align: left;
+}
+
+.perf-table td.is-best {
+  color: var(--live);
+  font-weight: 700;
+}
+
+.perf-table th.is-active,
+.perf-table tr.is-active td {
+  background: var(--surface-2);
+}
+
+.perf-overlay {
+  display: inline-flex;
+  margin-right: 4px;
+}
+
+.perf-peak {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.perf-note {
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.perf-legend {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.perf-legend li {
+  margin: 2px 0;
+}
+
+.perf-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.perf-zero {
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+.perf-figures {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.perf-figures h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.perf-figures dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.perf-figures dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.perf-figures dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.perf-flags {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #d29922;
+  font-size: 13px;
+}
+
+.perf-flags-ok {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.performance-chart .viz-caption {
+  font-size: 13px;
+  margin: 8px 0 4px;
+}
+
+/* Full-screen alert: blinks at 3 cycles a second, the §8.3 photosensitivity limit. */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #ffffff;
+  animation: alert-blink 0.333s steps(1, end) infinite;
+  touch-action: manipulation;
+}
+
+@keyframes alert-blink {
+  0% {
+    background: #d61f1f;
+  }
+  50% {
+    background: #111111;
+  }
+}
+
+.alert-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.alert-action {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.alert-detail {
+  margin: 0;
+  font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readiness-acquiring .readiness-dot {
+    animation: none;
+  }
+}

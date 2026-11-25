@@ -47,6 +47,11 @@ export function LogList({ logs, selectedId, units, onSelect, onDelete }: LogList
                     unfinished
                   </span>
                 )}
+                {log.type === 'performance' && (
+                  <span class="badge" title="Recorded on the Performance screen">
+                    performance
+                  </span>
+                )}
               </span>
               <span class="log-row-meta">
                 {formatLogDateTime(log.startedAt)} · {distance.value} {distance.unit} ·{' '}

@@ -83,6 +83,17 @@ export function SettingsScreen({ settings, logCount, onChange }: SettingsScreenP
         onSelect={(value) => onChange('exportFormat', value)}
       />
 
+      <Choice<'on' | 'off'>
+        label="Alert vibration"
+        hint="Vibrate with the sound when the wanted speed is reached"
+        value={settings.alertVibration ? 'on' : 'off'}
+        options={[
+          { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' },
+        ]}
+        onSelect={(value) => onChange('alertVibration', value === 'on')}
+      />
+
       <div class="setting">
         <div class="setting-head">
           <span class="setting-label">Storage</span>
@@ -116,9 +127,9 @@ export function SettingsScreen({ settings, logCount, onChange }: SettingsScreenP
           <span class="setting-hint">Not configurable</span>
         </div>
         <p class="setting-note muted">
-          Every position the device reports is recorded, at whatever rate it
-          produces them — typically 1 Hz. Phone GNSS receivers do not offer a
-          faster rate, and recording fewer points would only lose detail.
+          Route logs record every position the device reports, typically 1 Hz.
+          Performance logs use the same receiver; the rate they achieve is shown
+          on the Performance screen while recording.
         </p>
       </div>
     </div>

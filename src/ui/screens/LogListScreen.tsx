@@ -15,6 +15,7 @@ import type { Sharer, ShareOutcome } from '../../platform/Sharer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { LogList } from '../components/LogList';
 import { LogTabs } from '../components/LogTabs';
+import { PerformanceLogView } from '../components/PerformanceLogView';
 
 interface LogListScreenProps {
   repository: LogRepository;
@@ -91,7 +92,7 @@ export function LogListScreen({
         )}
       </div>
 
-      {selected && (
+      {selected && selected.type !== 'performance' && (
         <div class="export-bar">
           <button
             type="button"
@@ -111,6 +112,17 @@ export function LogListScreen({
             </span>
           )}
         </div>
+      )}
+
+      {selected?.type === 'performance' && (
+        <PerformanceLogView
+          key={selected.id}
+          repository={repository}
+          log={selected}
+          sharer={sharer}
+          units={units}
+          onChanged={() => void reload().then(onLogsChanged)}
+        />
       )}
 
       <LogTabs log={selected} fixes={fixes} loading={loadingPoints} units={units} />

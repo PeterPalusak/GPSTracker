@@ -18,6 +18,11 @@ export interface ExportFile {
    */
   mimeType: string;
   text: string;
+  /**
+   * Binary content, for formats that are not text (PNG charts, §7.1). When
+   * present it is what gets shared; `text` is then unused.
+   */
+  bytes?: Uint8Array;
 }
 
 export function exportLog(

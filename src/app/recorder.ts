@@ -18,10 +18,12 @@ import {
 import type {
   Fix,
   LogMeta,
+  LogType,
   PauseInterval,
   RecordingState,
   SignalState,
   Stats,
+  VehicleType,
 } from '../core/types';
 import type { LogRepository } from '../data/logRepository';
 import type {
@@ -52,6 +54,12 @@ export interface RecorderOptions {
 }
 
 type Listener = (snapshot: RecorderSnapshot) => void;
+type FixListener = (fixes: readonly Fix[]) => void;
+
+export interface StartOptions {
+  type?: LogType;
+  vehicle?: VehicleType;
+}
 
 export class Recorder {
   private readonly repo: LogRepository;
@@ -68,6 +76,7 @@ export class Recorder {
   private lastError: LocationErrorKind | null = null;
 
   private readonly listeners = new Set<Listener>();
+  private readonly fixListeners = new Set<FixListener>();
 
   /**
    * Serialises writes. Fixes arrive on a synchronous callback but persisting
@@ -87,6 +96,15 @@ export class Recorder {
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Hear each batch of fixes once it has been stored. The wanted-speed alert
+   * runs on this, so it is live rather than waiting for Stop (§8).
+   */
+  subscribeFixes(listener: FixListener): () => void {
+    this.fixListeners.add(listener);
+    return () => this.fixListeners.delete(listener);
   }
 
   snapshot(): RecorderSnapshot {
@@ -136,11 +154,15 @@ export class Recorder {
   // --- Commands -------------------------------------------------------------
 
   /** Begin a new log (REQ-REC-1). */
-  async start(): Promise<LogMeta> {
+  async start(options: StartOptions = {}): Promise<LogMeta> {
     this.assertCanApply('START');
 
     const startedAt = this.now();
-    this.log = await this.repo.createLog({ startedAt });
+    this.log = await this.repo.createLog({
+      startedAt,
+      type: options.type,
+      vehicle: options.vehicle,
+    });
     this.pauses = [];
     this.acc = createAccumulator();
     this.seq = 0;
@@ -187,6 +209,19 @@ export class Recorder {
     this.log = finished;
     this.emit();
     return finished;
+  }
+
+  /**
+   * Record that the wanted-speed alert fired now (§8, REQ-ACC-149).
+   * Ignored when no log is open.
+   */
+  async markAlert(): Promise<void> {
+    const log = this.log;
+    if (!log || this.recording !== 'recording') return;
+    const at = this.now();
+    await this.writes;
+    await this.repo.addAlertMark(log.id, at);
+    this.log = { ...log, alertMarks: [...(log.alertMarks ?? []), at] };
   }
 
   /** Pause and power the receiver down (REQ-REC-7). */
@@ -344,6 +379,8 @@ export class Recorder {
     }));
 
     for (const fix of toStore) addFix(this.acc, fix);
+
+    for (const listener of this.fixListeners) listener(toStore);
 
     // Committed as they arrive, never buffered (REQ-STO-2) — this is what
     // makes an interrupted ride recoverable.

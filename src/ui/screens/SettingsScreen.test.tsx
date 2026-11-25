@@ -27,7 +27,7 @@ describe('SettingsScreen (requirements §6)', () => {
   it('marks the active choice', () => {
     const html = render(
       <SettingsScreen
-        settings={{ units: 'mi', exportFormat: 'kml' }}
+        settings={{ ...DEFAULT_SETTINGS, units: 'mi', exportFormat: 'kml' }}
         logCount={0}
         onChange={noop}
       />,
@@ -88,8 +88,8 @@ describe('formatBytes (REQ-STO-5)', () => {
 describe('SettingsStore (REQ-SET-9…12)', () => {
   it('round-trips through memory', async () => {
     const store = new MemorySettingsStore();
-    await store.save({ units: 'mi', exportFormat: 'kml' });
-    expect(await store.load()).toEqual({ units: 'mi', exportFormat: 'kml' });
+    await store.save({ ...DEFAULT_SETTINGS, units: 'mi', exportFormat: 'kml' });
+    expect(await store.load()).toEqual({ ...DEFAULT_SETTINGS, units: 'mi', exportFormat: 'kml' });
   });
 
   it('starts at the defaults', async () => {
@@ -101,6 +101,6 @@ describe('SettingsStore (REQ-SET-9…12)', () => {
     // blocking storage in private mode: degrade, do not throw.
     const store = new LocalSettingsStore('test-key');
     expect(await store.load()).toEqual(DEFAULT_SETTINGS);
-    await expect(store.save({ units: 'mi', exportFormat: 'kml' })).resolves.toBeUndefined();
+    await expect(store.save({ ...DEFAULT_SETTINGS, units: 'mi', exportFormat: 'kml' })).resolves.toBeUndefined();
   });
 });

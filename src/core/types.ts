@@ -7,6 +7,14 @@
  * use SI regardless of that setting (REQ-EXP-10).
  */
 
+import type { PerformanceResults } from './performance/analysis';
+
+/** What a log was recorded for. Route is the main recorder (REQ-NAV-1…). */
+export type LogType = 'route' | 'performance';
+
+/** Vehicle used for a performance log (REQ-ACC-7). */
+export type VehicleType = 'motorcycle' | 'car' | 'bicycle';
+
 /** Whether a log is open, and if so whether it is paused (REQ-REC-0…14). */
 export type RecordingState = 'idle' | 'recording' | 'paused';
 
@@ -100,4 +108,18 @@ export interface LogMeta {
   /** Cached statistics, so opening a finished log does not rescan points. */
   stats: Stats | null;
   pointCount: number;
+
+  /*
+   * Fields added with the performance feature. Optional so that logs stored
+   * before it still load; the repository fills in the defaults on read.
+   */
+
+  /** Default `route` (REQ-ACC-105). */
+  type?: LogType;
+  /** Performance logs only (REQ-ACC-7). Default `motorcycle`. */
+  vehicle?: VehicleType | null;
+  /** Times, in epoch ms, at which the wanted-speed alert fired (§8). */
+  alertMarks?: number[];
+  /** Cached performance analysis, with the algorithm version (REQ-ACC-108). */
+  performance?: PerformanceResults | null;
 }

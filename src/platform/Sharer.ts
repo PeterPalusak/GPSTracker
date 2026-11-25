@@ -21,6 +21,11 @@ export interface Sharer {
   share(file: ExportFile): Promise<ShareOutcome>;
 }
 
+/** The bytes if the file is binary, otherwise its text. */
+function contentOf(file: ExportFile): BlobPart {
+  return (file.bytes as BlobPart | undefined) ?? file.text;
+}
+
 export class WebSharer implements Sharer {
   canShareFiles(file: ExportFile): boolean {
     if (typeof navigator === 'undefined' || !navigator.canShare || !navigator.share) {
@@ -58,12 +63,12 @@ export class WebSharer implements Sharer {
   }
 
   private toFile(file: ExportFile): File {
-    return new File([file.text], file.name, { type: file.mimeType });
+    return new File([contentOf(file)], file.name, { type: file.mimeType });
   }
 
   private download(file: ExportFile): ShareOutcome {
     try {
-      const blob = new Blob([file.text], { type: file.mimeType });
+      const blob = new Blob([contentOf(file)], { type: file.mimeType });
       const url = URL.createObjectURL(blob);
 
       const anchor = document.createElement('a');

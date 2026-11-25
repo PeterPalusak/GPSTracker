@@ -6,13 +6,31 @@
  */
 
 import { createLogId, formatLogName } from '../core/naming';
-import type { Fix, LogMeta, PauseInterval, Stats } from '../core/types';
+import type { Fix, LogMeta, LogType, PauseInterval, Stats, VehicleType } from '../core/types';
+import type { PerformanceResults } from '../core/performance/analysis';
+import { DEFAULT_VEHICLE } from '../core/performance/constants';
 import { openDatabase, pointRange, type Database } from './db';
 
 export interface NewLogOptions {
   startedAt?: number;
   id?: string;
   name?: string;
+  type?: LogType | undefined;
+  vehicle?: VehicleType | undefined;
+}
+
+/**
+ * Fill in the fields added after logs were first stored (see LogMeta).
+ * Every read goes through here, so the rest of the app can rely on them.
+ */
+export function withDefaults(meta: LogMeta): LogMeta {
+  return {
+    ...meta,
+    type: meta.type ?? 'route',
+    vehicle: meta.vehicle ?? null,
+    alertMarks: meta.alertMarks ?? [],
+    performance: meta.performance ?? null,
+  };
 }
 
 export class LogRepository {
@@ -31,7 +49,8 @@ export class LogRepository {
   /** Create a log in the `recording` state (REQ-REC-1, REQ-REC-2). */
   async createLog(options: NewLogOptions = {}): Promise<LogMeta> {
     const startedAt = options.startedAt ?? Date.now();
-    const meta: LogMeta = {
+    const type = options.type ?? 'route';
+    const meta: LogMeta = withDefaults({
       id: options.id ?? createLogId(startedAt),
       name: options.name ?? formatLogName(startedAt),
       startedAt,
@@ -40,7 +59,11 @@ export class LogRepository {
       pauses: [],
       stats: null,
       pointCount: 0,
-    };
+      type,
+      vehicle: type === 'performance' ? (options.vehicle ?? DEFAULT_VEHICLE) : null,
+      alertMarks: [],
+      performance: null,
+    });
     await this.db.put('logs', meta);
     return meta;
   }
@@ -94,7 +117,7 @@ export class LogRepository {
     const next: LogMeta = { ...meta, ...update, pauses };
     await tx.store.put(next);
     await tx.done;
-    return next;
+    return withDefaults(next);
   }
 
   /** Record a pause or resume (REQ-REC-7, REQ-REC-9, REQ-STAT-15). */
@@ -104,6 +127,26 @@ export class LogRepository {
     if (!meta) throw new Error(`No such log: ${logId}`);
     await tx.store.put({ ...meta, pauses: [...pauses] });
     await tx.done;
+  }
+
+  /** Change the vehicle of a performance log (REQ-ACC-7). Analysis must be rerun. */
+  async setVehicle(logId: string, vehicle: VehicleType): Promise<void> {
+    await this.patch(logId, { vehicle });
+  }
+
+  /** Record the moment the wanted-speed alert fired (§8, REQ-ACC-149). */
+  async addAlertMark(logId: string, at: number): Promise<void> {
+    const tx = this.db.transaction('logs', 'readwrite');
+    const meta = await tx.store.get(logId);
+    if (!meta) return;
+    const marks = [...(meta.alertMarks ?? []), at];
+    await tx.store.put({ ...meta, alertMarks: marks });
+    await tx.done;
+  }
+
+  /** Cache the performance analysis, or clear it with null (REQ-ACC-108). */
+  async setPerformance(logId: string, results: PerformanceResults | null): Promise<void> {
+    await this.patch(logId, { performance: results });
   }
 
   /** Cache computed statistics so reopening a log does not rescan points. */
@@ -126,16 +169,26 @@ export class LogRepository {
     await tx.done;
   }
 
+  /** Update some fields of a stored log in one transaction. */
+  private async patch(logId: string, changes: Partial<LogMeta>): Promise<void> {
+    const tx = this.db.transaction('logs', 'readwrite');
+    const meta = await tx.store.get(logId);
+    if (!meta) throw new Error(`No such log: ${logId}`);
+    await tx.store.put({ ...meta, ...changes });
+    await tx.done;
+  }
+
   // --- Queries --------------------------------------------------------------
 
   async getLog(logId: string): Promise<LogMeta | undefined> {
-    return this.db.get('logs', logId);
+    const meta = await this.db.get('logs', logId);
+    return meta ? withDefaults(meta) : undefined;
   }
 
   /** All logs, newest first (REQ-NAV-2). */
   async listLogs(): Promise<LogMeta[]> {
     const logs = await this.db.getAllFromIndex('logs', 'by-startedAt');
-    return logs.reverse();
+    return logs.reverse().map(withDefaults);
   }
 
   /**
@@ -145,7 +198,8 @@ export class LogRepository {
    * transition that opens a second — so the first match is the one.
    */
   async findOpenLog(): Promise<LogMeta | undefined> {
-    return this.db.getFromIndex('logs', 'by-status', 'recording');
+    const meta = await this.db.getFromIndex('logs', 'by-status', 'recording');
+    return meta ? withDefaults(meta) : undefined;
   }
 
   async readPoints(logId: string): Promise<Fix[]> {
